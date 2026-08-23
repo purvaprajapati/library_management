@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Member {{ member.user.name }} - Library Management System{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'member_list' %}" class="btn btn-secondary-custom btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Members
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="form-card p-4">
+            <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+                <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-user-edit"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">Edit Member Profile</h3>
+                    <p class="text-muted mb-0">Update account info for {{ member.user.name }}</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{% url 'edit_member' member.id %}">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="name" class="form-label fw-semibold">Full Name *</label>
+                    <input type="text" name="name" id="name" class="form-control" value="{{ member.user.name }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="email" class="form-label fw-semibold">Email Address *</label>
+                    <input type="email" name="email" id="email" class="form-control" value="{{ member.user.email }}" required>
+                </div>
+
+                <div class="mb-3">
+                    <label for="phone" class="form-label fw-semibold">Phone Number</label>
+                    <input type="text" name="phone" id="phone" class="form-control" value="{{ member.user.phone|default:'' }}">
+                </div>
+
+                <div class="mb-3">
+                    <label for="status" class="form-label fw-semibold">Membership Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="Active" {% if member.status == 'Active' %}selected{% endif %}>Active</option>
+                        <option value="Inactive" {% if member.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="address" class="form-label fw-semibold">Address</label>
+                    <textarea name="address" id="address" class="form-control" rows="3">{{ member.address|default:'' }}</textarea>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'member_list' %}" class="btn btn-secondary-custom">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fas fa-save me-1"></i> Update Member
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

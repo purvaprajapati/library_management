@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ book.title }} - Book Details{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'book_list' %}" class="btn btn-secondary-custom btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Books
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden p-4 bg-white">
+    <div class="row g-4">
+        <div class="col-md-4 text-center">
+            {% if book.image %}
+                <img src="{{ book.image.url }}" alt="{{ book.title }}" class="book-thumb-lg mb-3">
+            {% else %}
+                <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 180px; height: 240px; font-size: 3rem;">
+                    <i class="fas fa-book"></i>
+                </div>
+            {% endif %}
+            
+            <div class="mt-2">
+                {% if book.available_copies > 0 %}
+                    <span class="badge badge-status available fs-6 px-3 py-2">
+                        <i class="fas fa-check-circle me-1"></i> {{ book.available_copies }} Available
+                    </span>
+                {% else %}
+                    <span class="badge badge-status unavailable fs-6 px-3 py-2">
+                        <i class="fas fa-times-circle me-1"></i> Currently Unavailable
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div>
+                    <h2 class="fw-bold text-dark mb-1">{{ book.title }}</h2>
+                    <p class="text-muted fs-5 mb-2">by <strong>{{ book.author }}</strong></p>
+                </div>
+                {% if current_user.is_admin %}
+                    <div>
+                        <a href="{% url 'edit_book' book.id %}" class="btn btn-outline-warning">
+                            <i class="fas fa-edit me-1"></i> Edit
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if book.category %}
+                <span class="badge bg-primary me-2">{{ book.category.name }}</span>
+            {% endif %}
+            <span class="badge bg-light text-dark border">ISBN: {{ book.isbn }}</span>
+
+            <hr class="my-3">
+
+            <div class="row g-3 mb-3">
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Publisher</small>
+                    <span class="fw-semibold text-dark">{{ book.publisher|default:"N/A" }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Publication Year</small>
+                    <span class="fw-semibold text-dark">{{ book.publication_year|default:"N/A" }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Total Copies</small>
+                    <span class="fw-semibold text-dark">{{ book.total_copies }}</span>
+                </div>
+                <div class="col-sm-6">
+                    <small class="text-muted d-block">Available Copies</small>
+                    <span class="fw-semibold text-dark">{{ book.available_copies }}</span>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <h5 class="fw-bold text-dark mb-2">Description</h5>
+                <p class="text-secondary leading-relaxed mb-0">
+                    {{ book.description|default:"No description available for this book."|linebreaks }}
+                </p>
+            </div>
+
+            {% if current_user.is_admin and book.available_copies > 0 %}
+                <div class="mt-4">
+                    <a href="{% url 'issue_book' %}?book_id={{ book.id }}" class="btn btn-primary-custom">
+                        <i class="fas fa-hand-holding-book me-2"></i> Issue This Book
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

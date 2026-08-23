@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}Issued Books - Library Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Issued Books History</h2>
+        <p class="text-muted mb-0">Track all active and past book borrowing transactions.</p>
+    </div>
+    {% if current_user.is_admin %}
+        <div>
+            <a href="{% url 'issue_book' %}" class="btn btn-primary-custom">
+                <i class="fas fa-plus me-1"></i> Issue New Book
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<div class="table-card">
+    <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-list-check text-primary me-2"></i> Borrowed Books Registry</h5>
+        <span class="badge bg-primary fs-6 px-3 py-2">{{ issues|length }} Records</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table custom-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Member</th>
+                    <th>Book Title</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Return Date</th>
+                    <th>Status</th>
+                    {% if current_user.is_admin %}
+                        <th>Action</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in issues %}
+                    <tr id="issue-row-{{ issue.id }}">
+                        <td class="fw-bold text-dark">#{{ issue.id }}</td>
+                        <td>
+                            <span class="fw-semibold">{{ issue.member.user.name }}</span>
+                            <div class="small text-muted">{{ issue.member.membership_id }}</div>
+                        </td>
+                        <td>
+                            <span class="fw-bold text-dark">{{ issue.book.title }}</span>
+                            <div class="small text-muted">by {{ issue.book.author }}</div>
+                        </td>
+                        <td>{{ issue.issue_date|date:"d M Y" }}</td>
+                        <td>
+                            <span class="{% if issue.is_overdue and issue.status != 'Returned' %}text-danger fw-bold{% endif %}">
+                                {{ issue.due_date|date:"d M Y" }}
+                            </span>
+                        </td>
+                        <td id="return-date-cell-{{ issue.id }}">
+                            {{ issue.return_date|date:"d M Y"|default:"-" }}
+                        </td>
+                        <td>
+                            <span id="issue-status-badge-{{ issue.id }}" class="badge badge-status {% if issue.status == 'Returned' %}returned{% elif issue.is_overdue %}overdue{% else %}issued{% endif %}">
+                                {% if issue.is_overdue and issue.status != 'Returned' %}Overdue{% else %}{{ issue.status }}{% endif %}
+                            </span>
+                        </td>
+                        {% if current_user.is_admin %}
+                            <td>
+                                {% if issue.status == 'Issued' %}
+                                    <button type="button" class="btn btn-sm btn-success btn-return-book" data-id="{{ issue.id }}" data-title="{{ issue.book.title }}">
+                                        <i class="fas fa-undo me-1"></i> Return Book via AJAX
+                                    </button>
+                                {% else %}
+                                    <span class="text-muted small"><i class="fas fa-check-double text-success"></i> Returned</span>
+                                {% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">No issued books records found.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $(document).on('click', '.btn-return-book', function() {
+        const issueId = $(this).data('id');
+        const bookTitle = $(this).data('title');
+        const $btn = $(this);
+
+        if (confirm(`Confirm return for book "${bookTitle}"?`)) {
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing...');
+
+            $.ajax({
+                url: `/issue/${issueId}/return/`,
+                type: "POST",
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $(`#issue-status-badge-${issueId}`).removeClass('issued overdue').addClass('returned').text('Returned');
+                        $(`#return-date-cell-${issueId}`).text(response.return_date);
+                        $btn.replaceWith('<span class="text-muted small"><i class="fas fa-check-double text-success"></i> Returned</span>');
+                        showToastMessage(response.message, 'success');
+                    } else {
+                        $btn.prop('disabled', false).html('<i class="fas fa-undo me-1"></i> Return Book via AJAX');
+                        showToastMessage(response.message, 'error');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-undo me-1"></i> Return Book via AJAX');
+                    showToastMessage('Error processing return via AJAX.', 'error');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

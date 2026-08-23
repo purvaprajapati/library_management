@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+
+{% block title %}Overdue Books & Fines - Library Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-danger mb-1"><i class="fas fa-exclamation-circle me-2"></i> Overdue Books Report</h2>
+        <p class="text-muted mb-0">Lists all currently unreturned books past their due date with calculated fine amounts (₹5/day).</p>
+    </div>
+</div>
+
+<div class="table-card border-danger">
+    <div class="p-3 bg-danger text-white d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0 text-white"><i class="fas fa-clock-rotate-left me-2"></i> Active Overdue Loans</h5>
+        <span class="badge bg-white text-danger fs-6 px-3 py-2 fw-bold">{{ overdue_issues|length }} Overdue Items</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table custom-table">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Book Title</th>
+                    <th>Issue Date</th>
+                    <th>Due Date</th>
+                    <th>Days Overdue</th>
+                    <th>Calculated Fine</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for issue in overdue_issues %}
+                    <tr id="overdue-row-{{ issue.id }}">
+                        <td>
+                            <span class="fw-bold text-dark">{{ issue.member.user.name }}</span>
+                            <div class="small text-muted">{{ issue.member.membership_id }}</div>
+                        </td>
+                        <td>
+                            <span class="fw-semibold text-dark">{{ issue.book.title }}</span>
+                            <div class="small text-muted">ISBN: {{ issue.book.isbn }}</div>
+                        </td>
+                        <td>{{ issue.issue_date|date:"d M Y" }}</td>
+                        <td class="text-danger fw-bold">{{ issue.due_date|date:"d M Y" }}</td>
+                        <td>
+                            <span class="badge bg-danger text-white fs-6">{{ issue.days_overdue }} Days</span>
+                        </td>
+                        <td class="fw-bold fs-5 text-danger">₹{{ issue.fine_amount }}</td>
+                        <td>
+                            <button type="button" class="btn btn-sm btn-success btn-return-overdue" data-id="{{ issue.id }}" data-title="{{ issue.book.title }}">
+                                <i class="fas fa-undo me-1"></i> Return Book
+                            </button>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-success fs-5 fw-semibold">
+                            <i class="fas fa-check-circle fa-2x mb-3 d-block"></i>
+                            Excellent! There are currently no overdue books in the library.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('.btn-return-overdue').on('click', function() {
+        const issueId = $(this).data('id');
+        const bookTitle = $(this).data('title');
+        const $btn = $(this);
+
+        if (confirm(`Confirm return for overdue book "${bookTitle}"?`)) {
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Processing...');
+
+            $.ajax({
+                url: `/issue/${issueId}/return/`,
+                type: "POST",
+                success: function(response) {
+                    if (response.status === 'success') {
+                        $(`#overdue-row-${issueId}`).fadeOut(400, function() {
+                            $(this).remove();
+                        });
+                        showToastMessage(response.message, 'success');
+                    } else {
+                        $btn.prop('disabled', false).html('<i class="fas fa-undo me-1"></i> Return Book');
+                        showToastMessage(response.message, 'error');
+                    }
+                },
+                error: function() {
+                    $btn.prop('disabled', false).html('<i class="fas fa-undo me-1"></i> Return Book');
+                    showToastMessage('Error returning overdue book.', 'error');
+                }
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

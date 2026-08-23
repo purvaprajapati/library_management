@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+
+{% block title %}Member Dashboard - Library Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Welcome, {{ current_user.name }}</h2>
+        <p class="text-muted mb-0">Membership ID: <strong class="text-primary">{{ member.membership_id }}</strong> | Joined {{ member.join_date|date:"M d, Y" }}</p>
+    </div>
+    <div>
+        <a href="{% url 'book_list' %}" class="btn btn-primary-custom">
+            <i class="fas fa-search me-1"></i> Browse Library Catalog
+        </a>
+    </div>
+</div>
+
+<!-- Stats Cards Grid -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold">Total Borrowed</span>
+                <div class="stat-icon blue"><i class="fas fa-book"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-dark">{{ my_total_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold">Currently Issued</span>
+                <div class="stat-icon amber"><i class="fas fa-book-open"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-dark">{{ currently_issued_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold">Returned Books</span>
+                <div class="stat-icon green"><i class="fas fa-check-double"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-dark">{{ returned_count }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted small fw-semibold">Total Pending Fine</span>
+                <div class="stat-icon red"><i class="fas fa-indian-rupee-sign"></i></div>
+            </div>
+            <h3 class="fw-bold mb-0 text-danger">₹{{ total_fine }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Active Issued Books Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="table-card">
+            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-bookmark text-primary me-2"></i> Currently Issued Books</h5>
+                <a href="{% url 'my_books' %}" class="small text-primary text-decoration-none fw-semibold">View History</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Author</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Fine Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in currently_issued_list %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-3">
+                                        {% if issue.book.image %}
+                                            <img src="{{ issue.book.image.url }}" alt="{{ issue.book.title }}" class="book-thumb">
+                                        {% else %}
+                                            <div class="bg-secondary text-white rounded d-flex align-items-center justify-content-center" style="width: 48px; height: 64px;">
+                                                <i class="fas fa-book"></i>
+                                            </div>
+                                        {% endif %}
+                                        <div>
+                                            <a href="{% url 'book_detail' issue.book.id %}" class="fw-bold text-dark text-decoration-none">{{ issue.book.title }}</a>
+                                            <div class="small text-muted">ISBN: {{ issue.book.isbn }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ issue.book.author }}</td>
+                                <td>{{ issue.issue_date|date:"d M Y" }}</td>
+                                <td>
+                                    <span class="{% if issue.is_overdue %}text-danger fw-bold{% endif %}">
+                                        {{ issue.due_date|date:"d M Y" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge badge-status {% if issue.is_overdue %}overdue{% else %}issued{% endif %}">
+                                        {% if issue.is_overdue %}Overdue{% else %}Issued{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if issue.is_overdue %}
+                                        <span class="fw-bold text-danger">₹{{ issue.fine_amount }} ({{ issue.days_overdue }} days)</span>
+                                    {% else %}
+                                        <span class="text-success small"><i class="fas fa-check"></i> No Fine</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-book-open fa-2x mb-3 d-block text-secondary"></i>
+                                    You currently have no books issued. Browse the catalog to discover books!
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

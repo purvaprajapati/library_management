@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit {{ book.title }} - Library Management System{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'book_list' %}" class="btn btn-secondary-custom btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Catalog
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="form-card p-4">
+            <div class="d-flex align-items-center gap-3 mb-4 border-bottom pb-3">
+                <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                    <i class="fas fa-edit"></i>
+                </div>
+                <div>
+                    <h3 class="fw-bold text-dark mb-0">Edit Book</h3>
+                    <p class="text-muted mb-0">Update book information for "{{ book.title }}"</p>
+                </div>
+            </div>
+
+            <form method="POST" action="{% url 'edit_book' book.id %}" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label for="title" class="form-label fw-semibold">Book Title *</label>
+                        <input type="text" name="title" id="title" class="form-control" value="{{ book.title }}" required>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label for="isbn" class="form-label fw-semibold">ISBN *</label>
+                        <input type="text" name="isbn" id="isbn" class="form-control" value="{{ book.isbn }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="author" class="form-label fw-semibold">Author *</label>
+                        <input type="text" name="author" id="author" class="form-control" value="{{ book.author }}" required>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="category" class="form-label fw-semibold">Category</label>
+                        <select name="category" id="category" class="form-select">
+                            <option value="">-- Select Category --</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if book.category and book.category.id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="publisher" class="form-label fw-semibold">Publisher</label>
+                        <input type="text" name="publisher" id="publisher" class="form-control" value="{{ book.publisher|default:'' }}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="publication_year" class="form-label fw-semibold">Publication Year</label>
+                        <input type="number" name="publication_year" id="publication_year" class="form-control" value="{{ book.publication_year|default:'' }}">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="total_copies" class="form-label fw-semibold">Total Copies *</label>
+                        <input type="number" name="total_copies" id="total_copies" class="form-control" value="{{ book.total_copies }}" min="1" required>
+                        <small class="text-muted">Available: {{ book.available_copies }}</small>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="image" class="form-label fw-semibold">Book Cover Image</label>
+                        {% if book.image %}
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img src="{{ book.image.url }}" alt="{{ book.title }}" class="book-thumb">
+                                <small class="text-muted">Current cover preview</small>
+                            </div>
+                        {% endif %}
+                        <input type="file" name="image" id="image" class="form-control" accept="image/*">
+                        <small class="text-muted">Upload a new file to replace the existing cover image</small>
+                    </div>
+
+                    <div class="col-md-12">
+                        <label for="description" class="form-label fw-semibold">Description</label>
+                        <textarea name="description" id="description" class="form-control" rows="3">{{ book.description|default:'' }}</textarea>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{% url 'book_list' %}" class="btn btn-secondary-custom">Cancel</a>
+                    <button type="submit" class="btn btn-primary-custom">
+                        <i class="fas fa-save me-1"></i> Update Book
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

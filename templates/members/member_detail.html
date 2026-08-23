@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.user.name }} - Member Details{% endblock %}
+
+{% block content %}
+<div class="mb-3">
+    <a href="{% url 'member_list' %}" class="btn btn-secondary-custom btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Members
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white">
+            <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center mx-auto mb-3 fw-bold fs-2" style="width: 80px; height: 80px;">
+                {{ member.user.name|slice:":1"|upper }}
+            </div>
+            <h4 class="fw-bold text-dark mb-1">{{ member.user.name }}</h4>
+            <p class="text-primary fw-semibold mb-2">{{ member.membership_id }}</p>
+            <span class="badge badge-status {% if member.status == 'Active' %}active{% else %}inactive{% endif %} fs-6 mb-3">
+                {{ member.status }}
+            </span>
+
+            <div class="text-start border-top pt-3 mt-2">
+                <small class="text-muted d-block">Username</small>
+                <span class="fw-semibold text-dark">@{{ member.user.username }}</span>
+
+                <small class="text-muted d-block mt-2">Email</small>
+                <span class="fw-semibold text-dark">{{ member.user.email }}</span>
+
+                <small class="text-muted d-block mt-2">Phone</small>
+                <span class="fw-semibold text-dark">{{ member.user.phone|default:"N/A" }}</span>
+
+                <small class="text-muted d-block mt-2">Join Date</small>
+                <span class="fw-semibold text-dark">{{ member.join_date|date:"d M Y" }}</span>
+
+                <small class="text-muted d-block mt-2">Address</small>
+                <span class="fw-semibold text-dark">{{ member.address|default:"No address recorded" }}</span>
+            </div>
+
+            <div class="mt-4">
+                <a href="{% url 'edit_member' member.id %}" class="btn btn-outline-warning w-100">
+                    <i class="fas fa-edit me-1"></i> Edit Member Profile
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="table-card">
+            <div class="p-3 bg-light border-bottom">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-history me-2 text-primary"></i> Borrowing & Issue History</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table custom-table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Return Date</th>
+                            <th>Status</th>
+                            <th>Fine</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for issue in issues %}
+                            <tr>
+                                <td class="fw-bold">{{ issue.book.title }}</td>
+                                <td>{{ issue.issue_date|date:"d M Y" }}</td>
+                                <td>{{ issue.due_date|date:"d M Y" }}</td>
+                                <td>{{ issue.return_date|date:"d M Y"|default:"-" }}</td>
+                                <td>
+                                    <span class="badge badge-status {% if issue.status == 'Returned' %}returned{% elif issue.is_overdue %}overdue{% else %}issued{% endif %}">
+                                        {% if issue.is_overdue and issue.status != 'Returned' %}Overdue{% else %}{{ issue.status }}{% endif %}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if issue.is_overdue and issue.status != 'Returned' %}
+                                        <span class="fw-bold text-danger">₹{{ issue.fine_amount }}</span>
+                                    {% else %}
+                                        <span class="text-muted">₹0</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center py-4 text-muted">No book issue history for this member.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

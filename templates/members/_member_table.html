@@ -1,0 +1,36 @@
+{% for member in members %}
+    <tr id="member-row-{{ member.id }}">
+        <td class="fw-bold text-primary">{{ member.membership_id }}</td>
+        <td>
+            <a href="{% url 'member_detail' member.id %}" class="fw-bold text-dark text-decoration-none">
+                {{ member.user.name }}
+            </a>
+            <div class="small text-muted">@{{ member.user.username }}</div>
+        </td>
+        <td>{{ member.user.email }}</td>
+        <td>{{ member.user.phone|default:"N/A" }}</td>
+        <td>{{ member.join_date|date:"d M Y" }}</td>
+        <td>
+            <span id="status-badge-{{ member.id }}" class="badge badge-status {% if member.status == 'Active' %}active{% else %}inactive{% endif %}">
+                {{ member.status }}
+            </span>
+        </td>
+        <td>
+            <div class="btn-group btn-group-sm" role="group">
+                <a href="{% url 'member_detail' member.id %}" class="btn btn-outline-primary" title="View Profile & Issues">
+                    <i class="fas fa-eye"></i>
+                </a>
+                <a href="{% url 'edit_member' member.id %}" class="btn btn-outline-warning" title="Edit Member">
+                    <i class="fas fa-edit"></i>
+                </a>
+                <button type="button" class="btn btn-outline-secondary btn-toggle-status" data-id="{{ member.id }}" title="Toggle Active/Inactive">
+                    <i class="fas fa-power-off"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+{% empty %}
+    <tr>
+        <td colspan="7" class="text-center py-4 text-muted">No members found matching search query.</td>
+    </tr>
+{% endfor %}

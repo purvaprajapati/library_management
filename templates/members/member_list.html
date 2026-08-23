@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Member Management - Library Management System{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold text-dark mb-1">Library Members</h2>
+        <p class="text-muted mb-0">View, search, and manage registered library members.</p>
+    </div>
+</div>
+
+<!-- AJAX Search Bar -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 p-3 bg-white">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="fas fa-search text-muted"></i></span>
+                <input type="text" id="member-search-input" class="form-control" placeholder="Search member by name, username, phone, or membership ID...">
+            </div>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="badge bg-primary fs-6 px-3 py-2" id="member-count">{{ members|length }} Registered Members</span>
+        </div>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="table-card">
+    <div class="p-3 bg-light border-bottom">
+        <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-users me-2 text-primary"></i> Members List</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table custom-table">
+            <thead>
+                <tr>
+                    <th>Membership ID</th>
+                    <th>Name & Username</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Join Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="member-table-body">
+                {% include 'members/_member_table.html' %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    let timer;
+    $('#member-search-input').on('keyup', function() {
+        clearTimeout(timer);
+        const search = $(this).val();
+
+        timer = setTimeout(function() {
+            $.ajax({
+                url: "{% url 'search_members' %}",
+                type: "GET",
+                data: { search: search },
+                success: function(response) {
+                    $('#member-table-body').html(response.html);
+                    $('#member-count').text(response.count + ' Registered Members');
+                },
+                error: function() {
+                    showToastMessage('Failed to search members via AJAX.', 'error');
+                }
+            });
+        }, 300);
+    });
+
+    // Toggle Member Active/Inactive Status via AJAX
+    $(document).on('click', '.btn-toggle-status', function() {
+        const memberId = $(this).data('id');
+        const $btn = $(this);
+        $btn.prop('disabled', true);
+
+        $.ajax({
+            url: `/members/${memberId}/toggle-status/`,
+            type: "POST",
+            success: function(response) {
+                $btn.prop('disabled', false);
+                if (response.status === 'success') {
+                    const $badge = $(`#status-badge-${memberId}`);
+                    $badge.text(response.new_status);
+                    if (response.new_status === 'Active') {
+                        $badge.removeClass('inactive').addClass('active');
+                    } else {
+                        $badge.removeClass('active').addClass('inactive');
+                    }
+                    showToastMessage(response.message, 'success');
+                } else {
+                    showToastMessage(response.message, 'error');
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false);
+                showToastMessage('An error occurred during AJAX status toggle.', 'error');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
