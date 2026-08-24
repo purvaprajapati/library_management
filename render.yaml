@@ -3,7 +3,7 @@ services:
     name: library-management-system
     env: python
     buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
-    startCommand: "gunicorn library_management.wsgi"
+    startCommand: "python manage.py migrate && python seed_data.py && gunicorn library_management.wsgi"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
