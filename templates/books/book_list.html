@@ -6,7 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2 class="fw-bold text-dark mb-1">Book Catalog</h2>
-        <p class="text-muted mb-0">Browse, search, filter, and manage library books dynamically via AJAX.</p>
+        <p class="text-muted mb-0">Browse, search, filter, and manage library books</p>
     </div>
     {% if current_user.is_admin %}
         <div>
@@ -186,6 +186,37 @@ $(document).ready(function () {
             error: function () {
                 $btn.prop('disabled', false).html('<i class="fas fa-trash me-1"></i> Delete Book');
                 showToastMessage('An error occurred during AJAX deletion.', 'error');
+            }
+        });
+    // Member Borrow Book via AJAX
+    $(document).on('click', '.btn-member-borrow', function () {
+        const bookId = $(this).data('id');
+        const bookTitle = $(this).data('title');
+        const $btn = $(this);
+
+        if (!confirm(`Are you sure you want to borrow '${bookTitle}'?`)) return;
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Borrowing...');
+
+        $.ajax({
+            url: `/issue/borrow/${bookId}/`,
+            type: "POST",
+            headers: {
+                "X-CSRFToken": getCsrfToken()
+            },
+            success: function (response) {
+                if (response.status === 'success') {
+                    showToastMessage(response.message, 'success');
+                    $btn.removeClass('btn-outline-success').addClass('btn-secondary').prop('disabled', true).html('<i class="fas fa-check me-1"></i> Borrowed');
+                    fetchFilteredBooks();
+                } else {
+                    $btn.prop('disabled', false).html('<i class="fas fa-bookmark me-1"></i> Borrow');
+                    showToastMessage(response.message, 'error');
+                }
+            },
+            error: function () {
+                $btn.prop('disabled', false).html('<i class="fas fa-bookmark me-1"></i> Borrow');
+                showToastMessage('Error issuing book.', 'error');
             }
         });
     });

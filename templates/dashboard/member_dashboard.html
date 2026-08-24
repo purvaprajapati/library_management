@@ -55,6 +55,54 @@
     </div>
 </div>
 
+<!-- Analytics & Quick Discovery Grid -->
+<div class="row g-4 mb-4">
+    <!-- Chart Column -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie text-primary me-2"></i> Borrowing Summary</h5>
+                <span class="badge bg-light text-dark border">Personal Stats</span>
+            </div>
+            <div class="card-body p-4 d-flex justify-content-center align-items-center" style="position: relative; height: 260px;">
+                <canvas id="memberStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Discovery / Self-Borrow Column -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-magic text-warning me-2"></i> Discover & Issue Books</h5>
+                <a href="{% url 'book_list' %}" class="small text-primary text-decoration-none fw-semibold">View Full Catalog</a>
+            </div>
+            <div class="card-body p-4">
+                <div class="row g-3">
+                    {% for book in recommended_books %}
+                        <div class="col-sm-6">
+                            <div class="p-3 border rounded-3 bg-light d-flex align-items-center justify-content-between h-100">
+                                <div>
+                                    <h6 class="fw-bold text-dark mb-1 text-truncate" style="max-width: 180px;">{{ book.title }}</h6>
+                                    <p class="small text-muted mb-1">{{ book.author }}</p>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle">{{ book.available_copies }} copies left</span>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-primary-custom btn-member-borrow" data-id="{{ book.id }}" data-title="{{ book.title }}">
+                                    <i class="fas fa-plus me-1"></i> Borrow
+                                </button>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12 text-center py-4 text-muted">
+                            No books currently available for borrowing.
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Active Issued Books Table -->
 <div class="row">
     <div class="col-12">
@@ -128,3 +176,68 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Render Member Chart
+    const statusLabels = {{ member_status_labels_json|safe }};
+    const statusCounts = {{ member_status_counts_json|safe }};
+    
+    if (statusLabels && statusLabels.length > 0) {
+        new Chart(document.getElementById('memberStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    data: statusCounts,
+                    backgroundColor: ['#4f46e5', '#10b981', '#ef4444'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // AJAX Self Borrow Action
+    $('.btn-member-borrow').on('click', function() {
+        const bookId = $(this).data('id');
+        const bookTitle = $(this).data('title');
+        const $btn = $(this);
+
+        if (!confirm(`Are you sure you want to borrow '${bookTitle}'?`)) return;
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i> Issuing...');
+
+        $.ajax({
+            url: `/issue/borrow/${bookId}/`,
+            type: "POST",
+            headers: {
+                "X-CSRFToken": getCsrfToken()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    showToastMessage(response.message, 'success');
+                    setTimeout(() => window.location.reload(), 1200);
+                } else {
+                    $btn.prop('disabled', false).html('<i class="fas fa-plus me-1"></i> Borrow');
+                    showToastMessage(response.message, 'error');
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).html('<i class="fas fa-plus me-1"></i> Borrow');
+                showToastMessage('Error issuing book.', 'error');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+

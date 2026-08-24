@@ -81,14 +81,67 @@
                 </p>
             </div>
 
-            {% if current_user.is_admin and book.available_copies > 0 %}
-                <div class="mt-4">
-                    <a href="{% url 'issue_book' %}?book_id={{ book.id }}" class="btn btn-primary-custom">
-                        <i class="fas fa-hand-holding-book me-2"></i> Issue This Book
-                    </a>
-                </div>
+            {% if current_user.is_admin %}
+                {% if book.available_copies > 0 %}
+                    <div class="mt-4">
+                        <a href="{% url 'issue_book' %}?book_id={{ book.id }}" class="btn btn-primary-custom">
+                            <i class="fas fa-hand-holding-book me-2"></i> Issue This Book
+                        </a>
+                    </div>
+                {% endif %}
+            {% else %}
+                {% if book.available_copies > 0 %}
+                    <div class="mt-4">
+                        <button type="button" id="btn-detail-borrow" class="btn btn-primary-custom" data-id="{{ book.id }}" data-title="{{ book.title }}">
+                            <i class="fas fa-bookmark me-2"></i> Borrow This Book Now
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="mt-4">
+                        <button type="button" class="btn btn-secondary" disabled>
+                            <i class="fas fa-ban me-2"></i> Currently Out of Stock
+                        </button>
+                    </div>
+                {% endif %}
             {% endif %}
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    $('#btn-detail-borrow').on('click', function() {
+        const bookId = $(this).data('id');
+        const bookTitle = $(this).data('title');
+        const $btn = $(this);
+
+        if (!confirm(`Are you sure you want to borrow '${bookTitle}'?`)) return;
+
+        $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i> Processing Issue...');
+
+        $.ajax({
+            url: `/issue/borrow/${bookId}/`,
+            type: "POST",
+            headers: {
+                "X-CSRFToken": getCsrfToken()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    showToastMessage(response.message, 'success');
+                    setTimeout(() => window.location.href = "{% url 'my_books' %}", 1200);
+                } else {
+                    $btn.prop('disabled', false).html('<i class="fas fa-bookmark me-2"></i> Borrow This Book Now');
+                    showToastMessage(response.message, 'error');
+                }
+            },
+            error: function() {
+                $btn.prop('disabled', false).html('<i class="fas fa-bookmark me-2"></i> Borrow This Book Now');
+                showToastMessage('Error issuing book.', 'error');
+            }
+        });
+    });
+});
+</script>
 {% endblock %}

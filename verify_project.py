@@ -102,7 +102,17 @@ def run_tests():
 
     response = client.get('/books/add/')
     assert response.status_code == 302, "Member should NOT be allowed to open /books/add/"
-    print("[PASS] Role-based access control (Admin route protection from members) verified.")
+    # 11. Member Self-Borrowing Test
+    test_book = Book.objects.filter(available_copies__gt=0).first()
+    if test_book:
+        initial_stock = test_book.available_copies
+        response = client.post(f'/issue/borrow/{test_book.id}/', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
+        assert response.status_code == 200, "Member self-borrowing failed"
+        assert response.json()['status'] == 'success', "Member self-borrow status not success"
+
+        test_book.refresh_from_db()
+        assert test_book.available_copies == initial_stock - 1, "Stock did not decrement on member self-borrow"
+        print("[PASS] Member self-borrowing and stock decrement verified.")
 
     print("=========================================")
     print("ALL AUTOMATED TESTS PASSED SUCCESSFULLY!")

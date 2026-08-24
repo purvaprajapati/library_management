@@ -76,6 +76,32 @@
     </div>
 </div>
 
+<!-- Interactive Visual Analytics Charts -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-pie text-primary me-2"></i> Books by Category</h5>
+                <span class="badge bg-light text-dark border">Catalog Breakdown</span>
+            </div>
+            <div class="card-body p-4 d-flex justify-content-center align-items-center" style="position: relative; height: 260px;">
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm rounded-4 h-100">
+            <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0 text-dark"><i class="fas fa-chart-bar text-success me-2"></i> Circulation Overview</h5>
+                <span class="badge bg-light text-dark border">Issue & Return Status</span>
+            </div>
+            <div class="card-body p-4 d-flex justify-content-center align-items-center" style="position: relative; height: 260px;">
+                <canvas id="statusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Tables Section -->
 <div class="row g-4">
     <!-- Recently Issued Books -->
@@ -161,3 +187,65 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Render Category Doughnut Chart
+    const catLabels = {{ cat_labels_json|safe }};
+    const catCounts = {{ cat_counts_json|safe }};
+    
+    if (catLabels && catLabels.length > 0) {
+        new Chart(document.getElementById('categoryChart'), {
+            type: 'doughnut',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    data: catCounts,
+                    backgroundColor: ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899'],
+                    borderWidth: 2,
+                    borderColor: '#ffffff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: 'bottom' }
+                }
+            }
+        });
+    }
+
+    // Render Status Bar Chart
+    const statusLabels = {{ status_labels_json|safe }};
+    const statusCounts = {{ status_counts_json|safe }};
+
+    if (statusLabels && statusLabels.length > 0) {
+        new Chart(document.getElementById('statusChart'), {
+            type: 'bar',
+            data: {
+                labels: statusLabels,
+                datasets: [{
+                    label: 'Count',
+                    data: statusCounts,
+                    backgroundColor: ['#3b82f6', '#10b981', '#ef4444'],
+                    borderRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
+

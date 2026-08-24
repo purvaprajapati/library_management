@@ -154,3 +154,57 @@ def my_books_view(request):
         'returned_books': returned_books,
         'member': member
     })
+
+
+@member_required
+def member_borrow_book_view(request, book_id):
+    """
+    Allows a logged-in member to borrow/issue an available book directly.
+    """
+    user = request.user_profile
+    member = getattr(user, 'member_profile', None)
+    if not member:
+        member = Member.objects.create(user=user, membership_id=f"LIB-MEM-{user.id}")
+
+    book = get_object_or_404(Book, pk=book_id)
+
+    # Validation checks
+    if book.available_copies <= 0:
+        msg = f"Sorry, '{book.title}' is currently out of stock."
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': msg})
+        messages.error(request, msg)
+        return redirect('book_list')
+
+    if Issue.objects.filter(member=member, book=book, status='Issued').exists():
+        msg = f"You already have an active issue for '{book.title}'."
+        if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+            return JsonResponse({'status': 'error', 'message': msg})
+        messages.warning(request, msg)
+        return redirect('my_books')
+
+    # Default borrow period for member self-service: 14 days
+    due_date = timezone.now().date() + timedelta(days=14)
+
+    Issue.objects.create(
+        book=book,
+        member=member,
+        due_date=due_date,
+        status='Issued'
+    )
+
+    book.available_copies -= 1
+    book.save()
+
+    msg = f"Successfully borrowed '{book.title}'! Due date: {due_date.strftime('%d %b %Y')}."
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'message': msg,
+            'available_copies': book.available_copies,
+            'due_date': due_date.strftime('%d %b %Y')
+        })
+
+    messages.success(request, msg)
+    return redirect('my_books')
+
