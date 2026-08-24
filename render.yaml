@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: library-management-system
+    env: python
+    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
+    startCommand: "gunicorn library_management.wsgi"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
