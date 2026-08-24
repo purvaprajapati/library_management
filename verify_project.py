@@ -103,7 +103,8 @@ def run_tests():
     response = client.get('/books/add/')
     assert response.status_code == 302, "Member should NOT be allowed to open /books/add/"
     # 11. Member Self-Borrowing Test
-    test_book = Book.objects.filter(available_copies__gt=0).first()
+    member_obj = Member.objects.get(user__username='rahul')
+    test_book = Book.objects.filter(available_copies__gt=0).exclude(issues__member=member_obj, issues__status='Issued').first()
     if test_book:
         initial_stock = test_book.available_copies
         response = client.post(f'/issue/borrow/{test_book.id}/', HTTP_X_REQUESTED_WITH='XMLHttpRequest')
